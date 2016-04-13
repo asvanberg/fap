@@ -25,4 +25,7 @@ object model {
   }
 
   final case class FleetID(id: Long) extends AnyVal
+  object FleetID {
+    implicit val jsonCodec: CodecJson[FleetID] = CodecJson.derived[Long].xmap(FleetID(_))(_.id)
+  }
 }

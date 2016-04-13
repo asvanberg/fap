@@ -13,14 +13,14 @@ import scalaz.concurrent.Task
 import scalaz.{Kleisli, _}
 
 object crest {
-  sealed trait Crest {
+  sealed trait Server {
     def root: Uri = this match {
       case Tranquility => uri("https://crest-tq.eveonline.com/")
-      case Singularity => uri("https://sisi-api.testeveonline.com")
+      case Singularity => uri("https://api-sisi.testeveonline.com")
     }
   }
-  case object Tranquility extends Crest
-  case object Singularity extends Crest
+  case object Tranquility extends Server
+  case object Singularity extends Server
 
   sealed trait CrestOp[A]
 
@@ -30,11 +30,20 @@ object crest {
 
   type CrestIO[A] = Free.FreeC[CrestOp, A]
 
-  def getFleetMembers(characterID: CharacterID, fleetID: FleetID): CrestIO[List[FleetMember]] =
-    Free.liftFC(GetFleetMembers(characterID, fleetID))
+  class Crest[F[_]](implicit I: Inject[CrestOp, F]) {
+    private def lift[A](ga: CrestOp[A]) = Free.liftFC(I.inj(ga))
 
-  object interpreter extends (CrestOp ~> Kleisli[Task, (Client, Crest, OAuth2BearerToken), ?]) {
-    override def apply[A](fa: CrestOp[A]): Kleisli[Task, (Client, Crest, OAuth2BearerToken), A] =
+    def selectedCharacter: Free.FreeC[F, CharacterID] = lift(SelectedCharacter)
+
+    def getFleetMembers(characterID: CharacterID, fleetID: FleetID): Free.FreeC[F, List[FleetMember]] =
+      lift(GetFleetMembers(characterID, fleetID))
+  }
+  object Crest {
+    implicit def crests[F[_]](implicit I: Inject[CrestOp, F]) = new Crest
+  }
+
+  object interpreter extends (CrestOp ~> Kleisli[Task, (Client, Server, OAuth2BearerToken), ?]) {
+    override def apply[A](fa: CrestOp[A]): Kleisli[Task, (Client, Server, OAuth2BearerToken), A] =
       Kleisli.kleisli {
         case (client, crest, token) =>
           fa match {
@@ -54,11 +63,11 @@ object crest {
       }
   }
 
-  def pooled[A](prg: CrestIO[A]): Kleisli[Task, (Crest, OAuth2BearerToken), A] =
+  def pooled[A](prg: CrestIO[A]): Kleisli[Task, (Server, OAuth2BearerToken), A] =
     Kleisli.kleisli {
       case (crest, token) =>
         val client = PooledHttp1Client()
-        val interpreted = Free.runFC[CrestOp, Kleisli[Task, (Client, Crest, OAuth2BearerToken), ?], A](prg)(interpreter)
+        val interpreted = Free.runFC[CrestOp, Kleisli[Task, (Client, Server, OAuth2BearerToken), ?], A](prg)(interpreter)
         interpreted(client, crest, token) ensuring client.shutdown
     }
 }
