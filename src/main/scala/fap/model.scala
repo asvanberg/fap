@@ -17,6 +17,9 @@ object model {
   type Ship = String
 
   final case class Fleet(fleetID: FleetID, name: String, commander: CharacterID, logged: Instant)
+  object Fleet {
+    implicit val jsonCodec: CodecJson[Fleet] = casecodec4(Fleet.apply, Fleet.unapply)("fleetID", "name", "commander", "logged")
+  }
 
   final case class FleetMember(fleetID: FleetID, characterID: CharacterID, solarSystem: SolarSystem, ship: Ship)
 

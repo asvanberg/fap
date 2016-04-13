@@ -42,32 +42,24 @@ object crest {
     implicit def crests[F[_]](implicit I: Inject[CrestOp, F]) = new Crest
   }
 
-  object interpreter extends (CrestOp ~> Kleisli[Task, (Client, Server, OAuth2BearerToken), ?]) {
-    override def apply[A](fa: CrestOp[A]): Kleisli[Task, (Client, Server, OAuth2BearerToken), A] =
+  def interpreter(server: Server) = new (CrestOp ~> Kleisli[Task, (Client, OAuth2BearerToken), ?]) {
+    override def apply[A](fa: CrestOp[A]): Kleisli[Task, (Client, OAuth2BearerToken), A] =
       Kleisli.kleisli {
-        case (client, crest, token) =>
+        case (client, token) =>
           fa match {
             case GetFleetMembers(CharacterID(characterID), FleetID(fleetID)) =>
               val req = Request(
-                uri = crest.root / "characters" / characterID.toString / "fleets" / fleetID.toString,
+                uri = server.root / "characters" / characterID.toString / "fleets" / fleetID.toString,
                 headers = Headers(Authorization(token))
               )
               client.fetchAs[List[FleetMember]](req)(jsonOf)
             case SelectedCharacter =>
               val req = Request(
-                uri = crest.root / "decode",
+                uri = server.root / "decode",
                 headers = Headers(Authorization(token))
               )
               client.fetchAs[CharacterID](req)(jsonOf)
           }
       }
   }
-
-  def pooled[A](prg: CrestIO[A]): Kleisli[Task, (Server, OAuth2BearerToken), A] =
-    Kleisli.kleisli {
-      case (crest, token) =>
-        val client = PooledHttp1Client()
-        val interpreted = Free.runFC[CrestOp, Kleisli[Task, (Client, Server, OAuth2BearerToken), ?], A](prg)(interpreter)
-        interpreted(client, crest, token) ensuring client.shutdown
-    }
 }
