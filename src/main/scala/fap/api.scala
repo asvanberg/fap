@@ -1,11 +1,9 @@
 package fap
 
 import argonaut.Argonaut._
-import doobie.imports._
 import fap.hi._
 import org.http4s._
 import org.http4s.argonaut._
-import org.http4s.client.blaze.PooledHttp1Client
 import org.http4s.dsl._
 import org.http4s.headers.Authorization
 
@@ -18,8 +16,7 @@ object api {
   class Backend(interpreter: Fap ~> FapTask) {
 
     private def respond(response: FreeC[Fap, Task[Response]])(token: OAuth2BearerToken): Task[Response] = {
-      val client = PooledHttp1Client()
-      Free.runFC(response)(interpreter).apply((client, token)).join ensuring client.shutdown
+      Free.runFC(response)(interpreter).run(token).join
     }
 
     def service = authenticatedService {

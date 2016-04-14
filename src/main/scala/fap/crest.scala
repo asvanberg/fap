@@ -42,10 +42,10 @@ object crest {
     implicit def crests[F[_]](implicit I: Inject[CrestOp, F]) = new Crest
   }
 
-  def interpreter(server: Server) = new (CrestOp ~> Kleisli[Task, (Client, OAuth2BearerToken), ?]) {
-    override def apply[A](fa: CrestOp[A]): Kleisli[Task, (Client, OAuth2BearerToken), A] =
+  def interpreter(client: Client, server: Server) = new (CrestOp ~> Kleisli[Task, OAuth2BearerToken, ?]) {
+    override def apply[A](fa: CrestOp[A]): Kleisli[Task, OAuth2BearerToken, A] =
       Kleisli.kleisli {
-        case (client, token) =>
+        token =>
           fa match {
             case GetFleetMembers(CharacterID(characterID), FleetID(fleetID)) =>
               val req = Request(

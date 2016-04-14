@@ -78,7 +78,7 @@ object Run extends App {
       override def apply[A](fa: Task[A]): FapTask[A] = fa.liftKleisli
     }.compose(databaseInterpreter.compose(fleet.interpreter))
 
-    val crestInterpreter: CrestOp ~> FapTask = crest.interpreter(crestServer)
+    val crestInterpreter: CrestOp ~> FapTask = crest.interpreter(crestClient, crestServer)
 
     new (Fap ~> FapTask) {
       override def apply[A](fa: Fap[A]): FapTask[A] =
