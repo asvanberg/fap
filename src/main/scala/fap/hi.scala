@@ -15,6 +15,9 @@ object hi {
   def myFleets[F[_]](implicit C: Crest[F], F: Fleets[F]): Free.FreeC[F, List[Fleet]] =
     C.selectedCharacter >>= F.myFleets
 
+  def myParticipations[F[_]](implicit C: Crest[F], F: Fleets[F]): Free.FreeC[F, List[Fleet]] =
+    C.selectedCharacter >>= F.myParticipations
+
   def registerFleet[F[_]](fleetID: FleetID, name: String, logged: Instant)(implicit C: Crest[F], F: Fleets[F]): Free.FreeC[F, (Fleet, List[FleetMember])] =
     for {
       commander <- C.selectedCharacter

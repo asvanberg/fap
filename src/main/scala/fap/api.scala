@@ -27,6 +27,8 @@ object api {
         case GET -> Root / "fleets" =>
           val response = myFleets[Fap].map(fleets => Ok(fleets.asJson))
           run(response, token)
+        case GET -> Root / "participations" =>
+          run(myParticipations[Fap].map(fleets => Ok(fleets.asJson)), token)
       }
     }
 
