@@ -1,12 +1,11 @@
 package fap
 
-import doobie.syntax.catchable.ToDoobieCatchableOps._
+import _root_.argonaut._, Argonaut._
 import fap.model._
-import org.http4s.{Headers, OAuth2BearerToken, Request, Uri}
-import Uri._
+import org.http4s._
+import org.http4s.Uri._
 import org.http4s.argonaut._
 import org.http4s.client.Client
-import org.http4s.client.blaze.PooledHttp1Client
 import org.http4s.headers.Authorization
 
 import scalaz.concurrent.Task
@@ -42,24 +41,41 @@ object crest {
     implicit def crests[F[_]](implicit I: Inject[CrestOp, F]) = new Crest
   }
 
-  def interpreter(client: Client, server: Server) = new (CrestOp ~> Kleisli[Task, OAuth2BearerToken, ?]) {
-    override def apply[A](fa: CrestOp[A]): Kleisli[Task, OAuth2BearerToken, A] =
-      Kleisli.kleisli {
-        token =>
-          fa match {
-            case GetFleetMembers(CharacterID(characterID), FleetID(fleetID)) =>
-              val req = Request(
-                uri = server.root / "characters" / characterID.toString / "fleets" / fleetID.toString,
-                headers = Headers(Authorization(token))
-              )
-              client.fetchAs[List[FleetMember]](req)(jsonOf)
-            case SelectedCharacter =>
-              val req = Request(
-                uri = server.root / "decode",
-                headers = Headers(Authorization(token))
-              )
-              client.fetchAs[CharacterID](req)(jsonOf)
-          }
-      }
+  object interpreter {
+    def apply(client: Client, server: Server) = new (CrestOp ~> Kleisli[Task, OAuth2BearerToken, ?]) {
+      override def apply[A](fa: CrestOp[A]): Kleisli[Task, OAuth2BearerToken, A] =
+        Kleisli.kleisli {
+          token =>
+            fa match {
+              case GetFleetMembers(CharacterID(characterID), FleetID(fleetID)) =>
+                val req = Request(
+                  uri = server.root / "characters" / characterID.toString / "fleets" / fleetID.toString / "",
+                  headers = Headers(Authorization(token))
+                )
+                client.fetchAs[List[FleetMember]](req)
+              case SelectedCharacter =>
+                val req = Request(
+                  uri = server.root / "decode" / "",
+                  headers = Headers(Authorization(token))
+                )
+                for {
+                  characterLocation <- client.fetchAs[Decode](req)
+                  character <- client.getAs[Character](characterLocation.href)
+                } yield character.id
+            }
+        }
+    }
+
+    final case class Decode(href: Uri)
+    final case class Character(id: CharacterID)
+
+    implicit def jsonEntityDecoder[A: DecodeJson]: EntityDecoder[A] = jsonOf
+    implicit val uriDecodeJson: DecodeJson[Uri] = DecodeJson.optionDecoder(json =>
+      json.string.flatMap(fromString(_).toOption),
+      "Uri"
+    )
+    implicit val decodeDecodeJson: DecodeJson[Decode] = DecodeJson(cursor =>
+      (cursor --\ "character" --\ "href").as[Uri].map(Decode(_)))
+    implicit val characterDecodeJson: DecodeJson[Character] = casecodec1(Character.apply, Character.unapply)("id")
   }
 }
