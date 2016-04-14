@@ -67,7 +67,7 @@ object Run extends App {
     Task.delay {
       val flyway = new Flyway
       flyway.setDataSource(databaseConfiguration.url, "", "")
-      Task.delay(flyway.migrate())
+      flyway.migrate()
     }
 
   def createPool(databaseConfiguration: DatabaseConfiguration) =
