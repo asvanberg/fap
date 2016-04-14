@@ -94,8 +94,9 @@ object Run extends App {
   }
 
   def createCleanUpTask(connectionPool: HikariTransactor[Task], crestClient: Client, server: org.http4s.server.Server) = {
+    import org.log4s._
     def shutdown(what: String, task: Task[Unit]) =
-      Task.delay(print(s"Shutting down $what... ")) *> task *> Task.delay(println("done"))
+      Task.delay(getLogger.info(s"Shutting down $what... ")) *> task *> Task.delay(getLogger.info(s"$what shut down"))
     shutdown("CREST client", crestClient.shutdown) *>
       shutdown("Connection pool", connectionPool.shutdown) *>
       shutdown("HTTP server", server.shutdown)
