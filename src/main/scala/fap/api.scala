@@ -32,7 +32,7 @@ object api {
           request.headers.get(Authorization) match {
             case Some(Authorization(token@OAuth2BearerToken(_))) =>
               HttpService(run.andThen(_(token)))(request)
-            case None =>
+            case _ =>
               Task.now(Response(Unauthorized))
           }
       }
