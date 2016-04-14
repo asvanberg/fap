@@ -2,8 +2,6 @@ package fap
 
 import argonaut.Argonaut._
 import doobie.imports._
-import fap.crest._
-import fap.fleet._
 import fap.hi._
 import org.http4s._
 import org.http4s.argonaut._
@@ -14,27 +12,9 @@ import org.http4s.headers.Authorization
 import scalaz.Free.FreeC
 import scalaz.concurrent.Task
 import scalaz.syntax.bind._
-import scalaz.syntax.kleisli._
 import scalaz.{Free, Kleisli, ~>}
 
-object api extends App {
-
-  val crestServer = Tranquility
-
-  val xa = DriverManagerTransactor[Task]("org.postgresql.Driver", "url", "user", "pass")
-
-  val fleetInterpreter: FleetOp ~> FapTask = new (Task ~> FapTask) {
-    override def apply[A](fa: Task[A]): FapTask[A] = fa.liftKleisli
-  }.compose(xa.trans.compose(fleet.interpreter))
-
-  val crestInterpreter: CrestOp ~> FapTask = crest.interpreter(crestServer)
-
-  val interpreter = new (Fap ~> FapTask) {
-    override def apply[A](fa: Fap[A]): FapTask[A] =
-      fa.run.fold(crestInterpreter.apply, fleetInterpreter.apply)
-  }
-
-
+object api {
   class Backend(interpreter: Fap ~> FapTask) {
 
     def run(response: FreeC[Fap, Task[Response]], token: OAuth2BearerToken): Task[Response] = {

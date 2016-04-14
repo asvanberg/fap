@@ -22,7 +22,8 @@ libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-argonaut" % "0.13.1",
   "org.http4s" %% "http4s-client" % "0.13.1",
   "org.http4s" %% "http4s-blaze-client" % "0.13.1",
-  "com.h2database" % "h2" % "1.4.190"
+  "com.h2database" % "h2" % "1.4.190",
+  "org.flywaydb" % "flyway-core" % "4.0"
 )
 
 wartremoverErrors in (Compile, compile) ++= Warts.allBut(Wart.AsInstanceOf, Wart.Throw)
