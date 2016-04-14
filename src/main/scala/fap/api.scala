@@ -15,7 +15,7 @@ import scalaz.Free.FreeC
 import scalaz.concurrent.Task
 import scalaz.syntax.bind._
 import scalaz.syntax.kleisli._
-import scalaz.{Free, ~>}
+import scalaz.{Free, Kleisli, ~>}
 
 object api extends App {
 
@@ -42,19 +42,23 @@ object api extends App {
       Free.runFC(response)(interpreter).apply((client, token)).join ensuring client.shutdown
     }
 
-    def service = HttpService {
-      case request @ GET -> Root / "fleets" =>
-        val response = myFleets[Fap].map(fleets => Ok(fleets.asJson))
-        respond(request, response)
-    }
-
-    def respond(req: Request, response: FreeC[Fap, Task[Response]]): Task[Response] = {
-      req.headers.get(Authorization) match {
-        case Some(Authorization(token@OAuth2BearerToken(_))) =>
+    def service = authenticatedService {
+      token => HttpService {
+        case GET -> Root / "fleets" =>
+          val response = myFleets[Fap].map(fleets => Ok(fleets.asJson))
           run(response, token)
-        case None =>
-          Forbidden()
       }
     }
+
+    def authenticatedService(run: OAuth2BearerToken => HttpService): HttpService =
+      Kleisli {
+        request =>
+          request.headers.get(Authorization) match {
+            case Some(Authorization(token@OAuth2BearerToken(_))) =>
+              run(token)(request)
+            case None =>
+              Task.now(Response(Unauthorized))
+          }
+      }
   }
 }
