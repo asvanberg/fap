@@ -17,27 +17,24 @@ import scalaz.{Free, Kleisli, ~>}
 object api {
   class Backend(interpreter: Fap ~> FapTask) {
 
-    def run(response: FreeC[Fap, Task[Response]], token: OAuth2BearerToken): Task[Response] = {
+    private def respond(response: FreeC[Fap, Task[Response]])(token: OAuth2BearerToken): Task[Response] = {
       val client = PooledHttp1Client()
       Free.runFC(response)(interpreter).apply((client, token)).join ensuring client.shutdown
     }
 
     def service = authenticatedService {
-      token => HttpService {
-        case GET -> Root / "fleets" =>
-          val response = myFleets[Fap].map(fleets => Ok(fleets.asJson))
-          run(response, token)
-        case GET -> Root / "participations" =>
-          run(myParticipations[Fap].map(fleets => Ok(fleets.asJson)), token)
-      }
+      case GET -> Root / "fleets" =>
+        respond(myFleets[Fap].map(fleets => Ok(fleets.asJson)))
+      case GET -> Root / "participations" =>
+        respond(myParticipations[Fap].map(fleets => Ok(fleets.asJson)))
     }
 
-    def authenticatedService(run: OAuth2BearerToken => HttpService): HttpService =
+    private def authenticatedService(run: PartialFunction[Request, OAuth2BearerToken => Task[Response]]): HttpService =
       Kleisli {
         request =>
           request.headers.get(Authorization) match {
             case Some(Authorization(token@OAuth2BearerToken(_))) =>
-              run(token)(request)
+              HttpService(run.andThen(_(token)))(request)
             case None =>
               Task.now(Response(Unauthorized))
           }
