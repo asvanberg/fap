@@ -36,9 +36,7 @@ object Run extends App {
 
   val (server, cleanUp) = app.run
 
-  Runtime.getRuntime.addShutdownHook(new Thread(new Runnable {
-    override def run(): Unit = cleanUp.run
-  }))
+  sys.addShutdownHook(cleanUp.run)
 
   server.awaitShutdown()
 
