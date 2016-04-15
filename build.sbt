@@ -28,7 +28,8 @@ libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-blaze-client" % http4sVersion,
   "com.h2database" % "h2" % "1.4.190",
   "org.flywaydb" % "flyway-core" % "4.0",
-  "org.slf4j" % "slf4j-simple" % "1.7.12"
+  "org.slf4j" % "slf4j-simple" % "1.7.12",
+  "org.specs2" %% "specs2-core" % "3.6.6" % Test
 )
 
 wartremoverErrors in (Compile, compile) ++= Warts.allBut(Wart.AsInstanceOf, Wart.Throw)

@@ -49,7 +49,7 @@ object fleet {
         queries.insertMember(fleet, member, solarSystem, ship)
           .run
           .as(FleetMember(fleet, member, solarSystem, ship))
-      case MyFleets(CharacterID(characterID)) =>
+      case MyFleets(characterID) =>
         queries.myFleets(characterID)
           .list
       case MyParticipations(characterID) =>
@@ -61,7 +61,7 @@ object fleet {
     }
 
     object queries {
-      implicit val instantMeta: Meta[Instant] = Meta[java.util.Date].nxmap(_.toInstant, java.util.Date.from)
+      implicit val instantMeta: Meta[Instant] = Meta[java.sql.Timestamp].nxmap(_.toInstant, java.sql.Timestamp.from)
 
       def insertFleet(fleet: FleetID, name: String, commander: CharacterID, logged: Instant): Update0 =
         sql"""
@@ -77,7 +77,7 @@ object fleet {
           """
           .update
 
-      def myFleets(characterID: Long): Query0[Fleet] =
+      def myFleets(characterID: CharacterID): Query0[Fleet] =
         sql"""
           SELECT id, name, commander, logged
           FROM fleet
