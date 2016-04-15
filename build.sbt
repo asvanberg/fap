@@ -35,4 +35,4 @@ libraryDependencies ++= Seq(
   "org.specs2" %% "specs2-core" % "3.6.6" % Test
 )
 
-wartremoverErrors in (Compile, compile) ++= Warts.allBut(Wart.AsInstanceOf, Wart.Throw)
+wartremoverErrors in (Compile, compile) ++= Warts.allBut(Wart.AsInstanceOf, Wart.Throw, Wart.Nothing, Wart.Any, Wart.Product, Wart.IsInstanceOf, Wart.Serializable, Wart.ExplicitImplicitTypes, Wart.NonUnitStatements)
