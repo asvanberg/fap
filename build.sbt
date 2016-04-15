@@ -8,6 +8,8 @@ resolvers += Resolver.sonatypeRepo("releases")
 
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
 
+lazy val fap = project.in(file(".")).enablePlugins(SbtTwirl)
+
 val http4sVersion = "0.13.2"
 val scalazVersion = "7.1.7"
 val doobieVersion = "0.2.3"
@@ -26,6 +28,7 @@ libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-argonaut" % http4sVersion,
   "org.http4s" %% "http4s-client" % http4sVersion,
   "org.http4s" %% "http4s-blaze-client" % http4sVersion,
+  "org.http4s" %% "http4s-twirl" % http4sVersion,
   "com.h2database" % "h2" % "1.4.190",
   "org.flywaydb" % "flyway-core" % "4.0",
   "org.slf4j" % "slf4j-simple" % "1.7.12",
