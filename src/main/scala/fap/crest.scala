@@ -55,10 +55,10 @@ object crest {
             fa match {
               case GetFleetMembers(CharacterID(characterID), FleetID(fleetID)) =>
                 val req = Request(
-                  uri = server.root / "fleets" / fleetID.toString / "",
+                  uri = server.root / "fleets" / fleetID.toString / "members" / "",
                   headers = Headers(Authorization(token))
                 )
-                client.fetchAs[List[FleetMember]](req)
+                client.fetchAs[FleetMembers](req).map(_.members)
               case SelectedCharacter =>
                 val req = Request(
                   uri = server.root / "decode" / "",
@@ -74,6 +74,7 @@ object crest {
 
     final case class Decode(href: Uri)
     final case class Character(id: CharacterID)
+    final case class FleetMembers(members: List[FleetMember])
     final case class FleetMember(
                                   squadID: Long,
                                   solarSystem: FleetMember.SolarSystem,
@@ -118,5 +119,7 @@ object crest {
       casecodec3(FleetMember.Character.apply, FleetMember.Character.unapply)("id", "name", "href")
     implicit val fleetMemberJson: CodecJson[FleetMember] =
       casecodec11(FleetMember.apply, FleetMember.unapply)("squadID", "solarSystem", "wingID", "roleID", "character", "boosterID", "boosterName", "roleName", "station", "ship", "joinTime")
+    implicit val fleetMembersJson: CodecJson[FleetMembers] =
+      casecodec1(FleetMembers.apply, FleetMembers.unapply)("items")
   }
 }
