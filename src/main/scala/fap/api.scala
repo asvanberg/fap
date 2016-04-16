@@ -1,8 +1,12 @@
 package fap
 
+import java.time.Instant
+
+import _root_.argonaut._
 import argonaut.Argonaut._
 import fap.crest.Server
 import fap.hi._
+import fap.model.FleetID
 import org.http4s._
 import org.http4s.argonaut._
 import org.http4s.dsl._
@@ -15,6 +19,13 @@ import scalaz.syntax.bind._
 import scalaz.{Free, Kleisli, ~>}
 
 object api {
+  private val FleetURI = ".*/fleets/(\\d+)/$".r
+
+  final case class FleetRegistration(name: String, href: String)
+
+  implicit val fleetRegistrationJson: CodecJson[FleetRegistration] = casecodec2(FleetRegistration.apply, FleetRegistration.unapply)("name", "href")
+  implicit val foo: EntityDecoder[FleetRegistration] = jsonOf
+
   class Backend(interpreter: Fap ~> FapTask) {
 
     private def respond(response: FreeC[Fap, Task[Response]])(token: OAuth2BearerToken): Task[Response] = {
@@ -26,6 +37,16 @@ object api {
         respond(myFleets[Fap].map(fleets => Ok(fleets.asJson)))
       case GET -> Root / "participations" =>
         respond(myParticipations[Fap].map(fleets => Ok(fleets.asJson)))
+      case request @ POST -> Root / "register" =>
+        token => request.decode[FleetRegistration] {
+          case FleetRegistration(name, FleetURI(fleetId)) =>
+            val response = registerFleet[Fap](FleetID(fleetId.toLong), name, Instant.now()).map {
+              case (fleet, members) =>
+                Ok(("fleet", fleet.asJson) ->: ("members", members.asJson) ->: jEmptyObject)
+            }
+            respond(response)(token)
+          case _ => BadRequest.apply("got json just wrong body")
+        }
     }
 
     private def authenticatedService(run: PartialFunction[Request, OAuth2BearerToken => Task[Response]]): HttpService =
