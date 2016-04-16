@@ -35,4 +35,22 @@ libraryDependencies ++= Seq(
   "org.specs2" %% "specs2-core" % "3.6.6" % Test
 )
 
+scalacOptions ++= Seq(
+  "-deprecation",
+  "-encoding", "UTF-8",
+  "-feature",
+  "-language:existentials",
+  "-language:higherKinds",
+  "-language:implicitConversions",
+  "-unchecked",
+  "-Xfatal-warnings",
+  "-Xlint",
+  "-Yno-adapted-args",
+  "-Ywarn-dead-code",
+  "-Ywarn-numeric-widen",
+  "-Ywarn-value-discard",
+  "-Xfuture"
+  // does not work well with twirl templates "-Ywarn-unused-import"
+)
+
 wartremoverErrors in (Compile, compile) ++= Warts.allBut(Wart.AsInstanceOf, Wart.Throw, Wart.Nothing, Wart.Any, Wart.Product, Wart.IsInstanceOf, Wart.Serializable, Wart.ExplicitImplicitTypes, Wart.NonUnitStatements)
