@@ -24,7 +24,7 @@ object hi {
       fleetMembers <- C.getFleetMembers(commander, fleetID)
       fleet <- F.addFleet(fleetID, name, commander, logged)
       members <- fleetMembers traverseU { member =>
-        F.addMember(fleetID, member.characterID, member.solarSystem, member.ship)
+        F.addMember(fleetID, member.character.id, member.solarSystem.name, member.ship.name)
       }
     } yield (fleet, members)
 }
