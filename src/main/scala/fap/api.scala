@@ -5,6 +5,7 @@ import java.time.Instant
 import _root_.argonaut._
 import argonaut.Argonaut._
 import fap.crest.Server
+import fap.crest.interpreter.CrestResponse
 import fap.hi._
 import fap.model.FleetID
 import org.http4s._
@@ -15,7 +16,6 @@ import org.http4s.twirl._
 
 import scalaz.Free.FreeC
 import scalaz.concurrent.Task
-import scalaz.syntax.bind._
 import scalaz.{Free, Kleisli, ~>}
 
 object api {
@@ -29,7 +29,12 @@ object api {
   class Backend(interpreter: Fap ~> FapTask) {
 
     private def respond(response: FreeC[Fap, Task[Response]])(token: OAuth2BearerToken): Task[Response] = {
-      Free.runFC(response)(interpreter).run(token).join
+      Free.runFC(response)(interpreter).run(token).run.flatMap {
+        case CrestResponse.Ok(r) => r
+        case CrestResponse.Unauthorized => Task.now(Response(Unauthorized))
+        case CrestResponse.Forbidden => Forbidden()
+        case CrestResponse.Error => ServiceUnavailable()
+      }
     }
 
     def service = authenticatedService {

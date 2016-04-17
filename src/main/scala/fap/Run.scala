@@ -3,6 +3,7 @@ package fap
 import doobie.contrib.hikari.hikaritransactor.HikariTransactor
 import doobie.imports._
 import fap.api.{Backend, Frontend}
+import fap.crest.interpreter.{CrestAPI, CrestResponse, CrestResponseT}
 import fap.crest.{CrestOp, Server, Singularity, Tranquility}
 import fap.fleet.FleetOp
 import org.flywaydb.core.Flyway
@@ -74,7 +75,8 @@ object Run extends App {
 
   def createInterpreter(databaseInterpreter: ConnectionIO ~> Task, crestClient: Client, crestServer: Server) = {
     val fleetInterpreter: FleetOp ~> FapTask = new (Task ~> FapTask) {
-      override def apply[A](fa: Task[A]): FapTask[A] = fa.liftKleisli
+      override def apply[A](fa: Task[A]): FapTask[A] =
+        fa.liftKleisli.mapK[CrestAPI, A](t => CrestResponseT(t.map(CrestResponse.Ok(_): CrestResponse[A])))
     }.compose(databaseInterpreter.compose(fleet.interpreter))
 
     val crestInterpreter: CrestOp ~> FapTask = crest.interpreter(crestClient, crestServer)
