@@ -102,5 +102,11 @@ object interpreter {
       override def point[A](a: => A): CrestResponseT[F, A] =
         CrestResponseT(Monad[F].point(CrestResponse.Ok(a)))
     }
+
+    implicit def crestResponseTMonadTrans: MonadTrans[CrestResponseT] = new MonadTrans[CrestResponseT] {
+      override def liftM[G[_], A](a: G[A])(implicit M: Monad[G]): CrestResponseT[G, A] = CrestResponseT(M.map(a)(CrestResponse.Ok(_)))
+
+      override implicit def apply[G[_]: Monad]: Monad[CrestResponseT[G, ?]] = crestResponseTMonad
+    }
   }
 }
