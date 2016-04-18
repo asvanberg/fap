@@ -24,7 +24,8 @@ object api {
   final case class FleetRegistration(name: String, href: String)
 
   implicit val fleetRegistrationJson: CodecJson[FleetRegistration] = casecodec2(FleetRegistration.apply, FleetRegistration.unapply)("name", "href")
-  implicit val foo: EntityDecoder[FleetRegistration] = jsonOf
+  implicit val fleetRegistrationDecoder: EntityDecoder[FleetRegistration] = jsonOf
+  implicit def jsonEncoderOf[A: EncodeJson]: EntityEncoder[A] = org.http4s.argonaut.jsonEncoderOf[A]
 
   class Backend(interpreter: Fap ~> FapTask) {
 
@@ -39,9 +40,9 @@ object api {
 
     def service = authenticatedService {
       case GET -> Root / "fleets" =>
-        respond(myFleets[Fap].map(fleets => Ok(fleets.asJson)))
+        respond(myFleets[Fap].map(Ok(_)))
       case GET -> Root / "participations" =>
-        respond(myParticipations[Fap].map(fleets => Ok(fleets.asJson)))
+        respond(myParticipations[Fap].map(Ok(_)))
       case request @ POST -> Root / "register" =>
         token => request.decode[FleetRegistration] {
           case FleetRegistration(name, FleetURI(fleetId)) =>
@@ -50,7 +51,7 @@ object api {
                 Ok(("fleet", fleet.asJson) ->: ("members", members.asJson) ->: jEmptyObject)
             }
             respond(response)(token)
-          case _ => BadRequest.apply("got json just wrong body")
+          case _ => BadRequest()
         }
     }
 
