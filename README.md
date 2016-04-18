@@ -1,5 +1,9 @@
 # Fleet action participation
 
 A simple service used to track participation in fleets in EVE Online.
-Primarily intended as a service that other systems integrate
-with but a GUI will be available so it can be used as a standalone application.
+Intended to be used as a backend service by other systems that interface
+with users and handle authentication processes.
+
+## Roadmap
+* Corporation fleets
+* Alliance fleets

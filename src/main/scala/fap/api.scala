@@ -4,7 +4,6 @@ import java.time.Instant
 
 import _root_.argonaut._
 import argonaut.Argonaut._
-import fap.crest.Server
 import fap.crest.interpreter.CrestResponse
 import fap.hi._
 import fap.model.FleetID
@@ -12,7 +11,6 @@ import org.http4s._
 import org.http4s.argonaut._
 import org.http4s.dsl._
 import org.http4s.headers.Authorization
-import org.http4s.twirl._
 
 import scalaz.Free.FreeC
 import scalaz.concurrent.Task
@@ -65,11 +63,5 @@ object api {
               Task.now(Response(Unauthorized))
           }
       }
-  }
-
-  class Frontend(crestServer: Server) {
-    def service = HttpService {
-      case GET -> Root => Ok(fap.html.index("Test"))
-    }
   }
 }

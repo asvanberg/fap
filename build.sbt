@@ -28,7 +28,6 @@ libraryDependencies ++= Seq(
   "org.http4s" %% "http4s-argonaut" % http4sVersion,
   "org.http4s" %% "http4s-client" % http4sVersion,
   "org.http4s" %% "http4s-blaze-client" % http4sVersion,
-  "org.http4s" %% "http4s-twirl" % http4sVersion,
   "com.h2database" % "h2" % "1.4.190",
   "org.flywaydb" % "flyway-core" % "4.0",
   "org.slf4j" % "slf4j-simple" % "1.7.12",
@@ -49,8 +48,8 @@ scalacOptions ++= Seq(
   "-Ywarn-dead-code",
   "-Ywarn-numeric-widen",
   "-Ywarn-value-discard",
-  "-Xfuture"
-  // does not work well with twirl templates "-Ywarn-unused-import"
+  "-Xfuture",
+  "-Ywarn-unused-import"
 )
 
 wartremoverErrors in (Compile, compile) ++= Warts.allBut(Wart.AsInstanceOf, Wart.Throw, Wart.Nothing, Wart.Any, Wart.Product, Wart.IsInstanceOf, Wart.Serializable, Wart.ExplicitImplicitTypes, Wart.NonUnitStatements)

@@ -2,7 +2,7 @@ package fap
 
 import doobie.contrib.hikari.hikaritransactor.HikariTransactor
 import doobie.imports._
-import fap.api.{Backend, Frontend}
+import fap.api.Backend
 import fap.crest.interpreter.CrestResponseT
 import fap.crest.{CrestOp, Server, Singularity, Tranquility}
 import fap.fleet.FleetOp
@@ -10,7 +10,6 @@ import org.flywaydb.core.Flyway
 import org.http4s.client.Client
 import org.http4s.client.blaze.PooledHttp1Client
 import org.http4s.server.blaze.BlazeBuilder
-import org.http4s.server.staticcontent._
 
 import scala.util.Properties._
 import scala.Function.const
@@ -91,8 +90,6 @@ object Run extends App {
     BlazeBuilder
       .bindLocal(configuration.port)
       .mountService(new Backend(interpreter).service, "/api")
-      .mountService(new Frontend(configuration.crest).service)
-      .mountService(resourceService(ResourceService.Config(basePath = "/static", pathPrefix = "/static", cacheStartegy = MemoryCache())))
       .start
   }
 
