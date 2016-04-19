@@ -2,7 +2,7 @@ package fap.crest
 
 import _root_.argonaut.DecodeJson
 import fap.crest.model._
-import fap.model.{CharacterID, FleetID}
+import fap.model.FleetID
 import org.http4s._
 import org.http4s.argonaut.jsonOf
 import org.http4s.client.Client

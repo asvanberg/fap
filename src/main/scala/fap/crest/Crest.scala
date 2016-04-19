@@ -1,7 +1,7 @@
 package fap.crest
 
 import fap.crest.model.{Character, FleetMember}
-import fap.model.{CharacterID, FleetID}
+import fap.model.FleetID
 import org.http4s.Uri
 import org.http4s.Uri.uri
 
