@@ -37,12 +37,6 @@ object interpreter {
                 uri = server.root / "fleets" / fleetID.toString / "members" / "",
                 headers = Headers(Authorization(token))
               )
-              client.fetch(req) {
-                case Ok(response) => response.as[FleetMembers].map(a => CrestResponse.Ok(a.members))
-                case Unauthorized(_) => Task.now(CrestResponse.Unauthorized)
-                case Forbidden(_) => Task.now(CrestResponse.Forbidden)
-                case _ => Task.now(CrestResponse.Error)
-              }
               crestCall[FleetMembers](req).map(_.members)
             case SelectedCharacter =>
               val req = Request(
