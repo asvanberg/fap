@@ -52,7 +52,7 @@ object interpreter {
               for {
                 characterLocation <- crestCall[Decode](req)
                 character <- crestCall[Character](Request(uri = characterLocation.href))
-              } yield character.id
+              } yield character
           }
       }
   }

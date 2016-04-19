@@ -4,7 +4,7 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeParseException
 
 import argonaut._, Argonaut._
-import fap.model.CharacterID
+import fap.model.{CharacterID, CorporationID}
 import org.http4s.Uri
 import org.http4s.Uri._
 
@@ -13,7 +13,10 @@ import scalaz.syntax.id._
 
 object model {
   final case class Decode(href: Uri)
-  final case class Character(id: CharacterID)
+  final case class Character(id: CharacterID, corporation: Character.Corporation)
+  object Character {
+    final case class Corporation(id: CorporationID, name: String, href: Uri)
+  }
   final case class FleetMembers(members: List[FleetMember])
   final case class FleetMember(
                                 squadID: Long,
@@ -47,7 +50,8 @@ object model {
   )
   implicit val decodeDecodeJson: DecodeJson[Decode] = DecodeJson(cursor =>
     (cursor --\ "character" --\ "href").as[Uri].map(Decode(_)))
-  implicit val characterDecodeJson: DecodeJson[Character] = casecodec1(Character.apply, Character.unapply)("id")
+  implicit val corporationDecodeJson: CodecJson[Character.Corporation] = casecodec3(Character.Corporation.apply, Character.Corporation.unapply)("id", "name", "href")
+  implicit val characterDecodeJson: DecodeJson[Character] = casecodec2(Character.apply, Character.unapply)("id", "corporation")
   implicit val solarSystemJson: CodecJson[FleetMember.SolarSystem] =
     casecodec3(FleetMember.SolarSystem.apply, FleetMember.SolarSystem.unapply)("id", "name", "href")
   implicit val stationJson: CodecJson[FleetMember.Station] =
