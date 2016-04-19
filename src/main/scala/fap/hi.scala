@@ -4,6 +4,7 @@ import java.time.Instant
 
 import doobie.imports.{freeMonadC, unapplyMMFA}
 import fap.crest.Crest
+import fap.crest.model.Character
 import fap.fleet.Fleets
 import fap.model.{CorporationID, Fleet, FleetID, FleetMember}
 
@@ -27,4 +28,7 @@ object hi {
         F.addMember(fleetID, member.character.id, member.solarSystem.name, member.ship.name)
       }
     } yield (fleet, members)
+
+  def currentCharacter[F[_]](implicit C: Crest[F]): Free.FreeC[F, Character] =
+    C.selectedCharacter
 }

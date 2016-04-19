@@ -51,6 +51,16 @@ object api {
             respond(response)(token)
           case _ => BadRequest()
         }
+      case request @ POST -> Root / "register" / "corporation" =>
+        token => request.decode[FleetRegistration] {
+          case FleetRegistration(name, FleetURI(fleetId)) =>
+            val response = for {
+              commander <- currentCharacter[Fap]
+              x <- registerFleet[Fap](FleetID(fleetId.toLong), name, Instant.now(), Some(commander.corporation.id))
+              (fleet, members) = x
+            } yield Ok(("fleet", fleet.asJson) ->: ("members", members.asJson) ->: jEmptyObject)
+            respond(response)(token)
+        }
     }
 
     private def authenticatedService(run: PartialFunction[Request, OAuth2BearerToken => Task[Response]]): HttpService =
