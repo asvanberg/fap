@@ -31,7 +31,8 @@ libraryDependencies ++= Seq(
   "com.h2database" % "h2" % "1.4.190",
   "org.flywaydb" % "flyway-core" % "4.0",
   "org.slf4j" % "slf4j-simple" % "1.7.12",
-  "org.specs2" %% "specs2-core" % "3.6.6" % Test
+  "org.specs2" %% "specs2-core" % "3.6.6" % Test,
+  "org.specs2" %% "specs2-scalacheck" % "3.6.6" % Test
 )
 
 scalacOptions ++= Seq(

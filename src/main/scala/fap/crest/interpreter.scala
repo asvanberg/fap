@@ -17,10 +17,17 @@ import scalaz.syntax.monad._
 object interpreter {
 
   type CrestAPI[A] = CrestResponseT[Task, A]
+  type CrestTask[A] = Kleisli[CrestAPI, OAuth2BearerToken, A]
 
   private implicit def jsonEntityDecoder[A: DecodeJson]: EntityDecoder[A] = jsonOf[A]
 
-  def apply(client: Client, server: Server) = new (CrestOp ~> Kleisli[CrestAPI, OAuth2BearerToken, ?]) {
+  def apply(client: Client, server: Server): CrestOp ~> CrestTask =
+    new (CrestOp ~> CrestTask) {
+      override def apply[A](fa: CrestOp[A]): CrestTask[A] =
+        new DedupingInterpreter[CrestTask](new HttpInterpreter(client, server)).apply(fa).eval(CrestCache(None))
+    }
+
+  private class HttpInterpreter(client: Client, server: Server) extends (CrestOp ~> Kleisli[CrestAPI, OAuth2BearerToken, ?]) {
     private def crestCall[A: EntityDecoder](f: Uri => Uri) =
       Kleisli.kleisli[CrestAPI, OAuth2BearerToken, A] { token =>
         val request = Request(
@@ -45,6 +52,25 @@ object interpreter {
             character <- crestCall[Character](const(characterLocation.href))
           } yield character
       }
+  }
+
+  private[crest] final case class CrestCache(currentCharacter: Option[Character])
+
+  private[crest] class DedupingInterpreter[F[_]](wrapped: CrestOp ~> F)(implicit F: Applicative[F])
+    extends (CrestOp ~> StateT[F, CrestCache, ?])
+  {
+    override def apply[A](fa: CrestOp[A]): StateT[F, CrestCache, A] = StateT {
+      cache =>
+        fa match {
+          case SelectedCharacter =>
+            cache.currentCharacter match {
+              case Some(x) => x.pure[F].strengthL(cache)
+              case None =>
+                wrapped(SelectedCharacter).map(character => (cache.copy(currentCharacter = Some(character)), character))
+            }
+          case x => wrapped(x).strengthL(cache)
+        }
+    }
   }
 
   sealed trait CrestResponse[+A]
