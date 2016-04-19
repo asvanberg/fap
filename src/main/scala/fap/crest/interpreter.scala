@@ -9,9 +9,10 @@ import org.http4s.client.Client
 import org.http4s.dsl._
 import org.http4s.headers.Authorization
 
+import scala.Function.const
+import scalaz._
 import scalaz.concurrent.Task
 import scalaz.syntax.monad._
-import scalaz.{Kleisli, _}
 
 object interpreter {
 
@@ -20,34 +21,29 @@ object interpreter {
   private implicit def jsonEntityDecoder[A: DecodeJson]: EntityDecoder[A] = jsonOf[A]
 
   def apply(client: Client, server: Server) = new (CrestOp ~> Kleisli[CrestAPI, OAuth2BearerToken, ?]) {
-    def crestCall[A: EntityDecoder](request: Request): CrestResponseT[Task, A] = {
-      CrestResponseT(client.fetch(request) {
-        case Ok(response) => response.as[A].map(CrestResponse.Ok(_))
-        case Unauthorized(_) => Task.now(CrestResponse.Unauthorized)
-        case Forbidden(_) => Task.now(CrestResponse.Forbidden)
-        case _ => Task.now(CrestResponse.Error)
-      })
-    }
+    private def crestCall[A: EntityDecoder](f: Uri => Uri) =
+      Kleisli.kleisli[CrestAPI, OAuth2BearerToken, A] { token =>
+        val request = Request(
+          headers = Headers(Authorization(token)),
+          uri = f(server.root) / "" // Ensure trailing slash
+        )
+        CrestResponseT(client.fetch(request) {
+          case Ok(response) => response.as[A].map(CrestResponse.Ok(_))
+          case Unauthorized(_) => Task.now(CrestResponse.Unauthorized)
+          case Forbidden(_) => Task.now(CrestResponse.Forbidden)
+          case _ => Task.now(CrestResponse.Error)
+        })
+      }
+
     override def apply[A](fa: CrestOp[A]): Kleisli[CrestAPI, OAuth2BearerToken, A] =
-      Kleisli.kleisli {
-        token =>
-          fa match {
-            case GetFleetMembers(CharacterID(characterID), FleetID(fleetID)) =>
-              val req = Request(
-                uri = server.root / "fleets" / fleetID.toString / "members" / "",
-                headers = Headers(Authorization(token))
-              )
-              crestCall[FleetMembers](req).map(_.members)
-            case SelectedCharacter =>
-              val req = Request(
-                uri = server.root / "decode" / "",
-                headers = Headers(Authorization(token))
-              )
-              for {
-                characterLocation <- crestCall[Decode](req)
-                character <- crestCall[Character](Request(uri = characterLocation.href))
-              } yield character
-          }
+      fa match {
+        case GetFleetMembers(CharacterID(characterID), FleetID(fleetID)) =>
+          crestCall[FleetMembers](_ / "fleets" / fleetID.toString / "members").map(_.members)
+        case SelectedCharacter =>
+          for {
+            characterLocation <- crestCall[Decode](_ / "decode")
+            character <- crestCall[Character](const(characterLocation.href))
+          } yield character
       }
   }
 
