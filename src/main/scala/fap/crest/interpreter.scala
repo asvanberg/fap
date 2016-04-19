@@ -37,7 +37,7 @@ object interpreter {
 
     override def apply[A](fa: CrestOp[A]): Kleisli[CrestAPI, OAuth2BearerToken, A] =
       fa match {
-        case GetFleetMembers(CharacterID(characterID), FleetID(fleetID)) =>
+        case GetFleetMembers(FleetID(fleetID)) =>
           crestCall[FleetMembers](_ / "fleets" / fleetID.toString / "members").map(_.members)
         case SelectedCharacter =>
           for {

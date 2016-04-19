@@ -9,7 +9,7 @@ import scalaz.{Free, Inject}
 
 sealed trait CrestOp[A]
 
-final case class GetFleetMembers(characterID: CharacterID, fleetID: FleetID) extends CrestOp[List[FleetMember]]
+final case class GetFleetMembers(fleetID: FleetID) extends CrestOp[List[FleetMember]]
 
 case object SelectedCharacter extends CrestOp[Character]
 
@@ -18,8 +18,8 @@ class Crest[F[_]](implicit I: Inject[CrestOp, F]) {
 
   def selectedCharacter: Free.FreeC[F, Character] = lift(SelectedCharacter)
 
-  def getFleetMembers(characterID: CharacterID, fleetID: FleetID): Free.FreeC[F, List[FleetMember]] =
-    lift(GetFleetMembers(characterID, fleetID))
+  def getFleetMembers(fleetID: FleetID): Free.FreeC[F, List[FleetMember]] =
+    lift(GetFleetMembers(fleetID))
 }
 object Crest {
   implicit def crests[F[_]](implicit I: Inject[CrestOp, F]) = new Crest
