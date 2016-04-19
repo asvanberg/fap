@@ -10,7 +10,7 @@ import scalaz.syntax.functor._
 
 object fleet {
   sealed trait FleetOp[A]
-  final case class AddFleet(fleet: FleetID, name: String, commander: CharacterID, logged: Instant) extends FleetOp[Fleet]
+  final case class AddFleet(fleet: FleetID, name: String, commander: CharacterID, logged: Instant, corporationID: Option[CorporationID]) extends FleetOp[Fleet]
   final case class AddFleetMember(fleet: FleetID, member: CharacterID, solarSystem: SolarSystem, ship: Ship) extends FleetOp[FleetMember]
   final case class MyFleets(characterID: CharacterID) extends FleetOp[List[Fleet]]
   final case class MyParticipations(characterID: CharacterID) extends FleetOp[List[Fleet]]
@@ -19,8 +19,8 @@ object fleet {
   class Fleets[F[_]](implicit I: Inject[FleetOp, F]) {
     private def lift[A](ga: FleetOp[A]) = Free.liftFC(I.inj(ga))
 
-    def addFleet(fleet: FleetID, name: String, commander: CharacterID, logged: Instant): Free.FreeC[F, Fleet] =
-      lift(AddFleet(fleet, name, commander, logged))
+    def addFleet(fleet: FleetID, name: String, commander: CharacterID, logged: Instant, corporation: Option[CorporationID]): Free.FreeC[F, Fleet] =
+      lift(AddFleet(fleet, name, commander, logged, corporation))
 
     def addMember(fleet: FleetID, member: CharacterID, solarSystem: SolarSystem, ship: Ship): Free.FreeC[F, FleetMember] =
       lift(AddFleetMember(fleet, member, solarSystem, ship))
@@ -41,8 +41,8 @@ object fleet {
 
   object interpreter extends (FleetOp ~> ConnectionIO)  {
     override def apply[A](fa: FleetOp[A]): ConnectionIO[A] = fa match {
-      case AddFleet(fleet, name, commander, logged) =>
-        queries.insertFleet(fleet, name, commander, logged)
+      case AddFleet(fleet, name, commander, logged, corporationID) =>
+        queries.insertFleet(fleet, name, commander, logged, corporationID)
           .run
           .as(Fleet(fleet, name, commander, logged))
       case AddFleetMember(fleet, member, solarSystem, ship) =>
@@ -63,10 +63,10 @@ object fleet {
     object queries {
       implicit val instantMeta: Meta[Instant] = Meta[java.sql.Timestamp].nxmap(_.toInstant, java.sql.Timestamp.from)
 
-      def insertFleet(fleet: FleetID, name: String, commander: CharacterID, logged: Instant): Update0 =
+      def insertFleet(fleet: FleetID, name: String, commander: CharacterID, logged: Instant, corporationID: Option[CorporationID]): Update0 =
         sql"""
-          INSERT INTO fleet (id, name, commander, logged)
-          VALUES ($fleet, $name, $commander, $logged)
+          INSERT INTO fleet (id, name, commander, logged, corporation_id)
+          VALUES ($fleet, $name, $commander, $logged, $corporationID)
           """
           .update
 

@@ -12,6 +12,11 @@ object model {
     implicit val jsonCodec: CodecJson[CharacterID] = CodecJson.derived[Long].xmap(CharacterID(_))(_.id)
   }
 
+  final case class CorporationID(id: Long) extends AnyVal
+  object CorporationID {
+    implicit val jsonCodec: CodecJson[CorporationID] = CodecJson.derived[Long].xmap(CorporationID(_))(_.id)
+  }
+
   type SolarSystem = String
 
   type Ship = String

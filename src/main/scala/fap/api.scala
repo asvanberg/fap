@@ -44,7 +44,7 @@ object api {
       case request @ POST -> Root / "register" =>
         token => request.decode[FleetRegistration] {
           case FleetRegistration(name, FleetURI(fleetId)) =>
-            val response = registerFleet[Fap](FleetID(fleetId.toLong), name, Instant.now()).map {
+            val response = registerFleet[Fap](FleetID(fleetId.toLong), name, Instant.now(), None).map {
               case (fleet, members) =>
                 Ok(("fleet", fleet.asJson) ->: ("members", members.asJson) ->: jEmptyObject)
             }

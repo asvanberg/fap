@@ -1,0 +1,1 @@
+ALTER TABLE fleet ADD COLUMN corporation_id BIGINT NULL;

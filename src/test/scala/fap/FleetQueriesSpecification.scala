@@ -18,7 +18,7 @@ object FleetQueriesSpecification extends Specification with AnalysisSpec {
   flyway.migrate()
 
   check(fleet.interpreter.queries.fleetMembers(FleetID(0)))
-  check(fleet.interpreter.queries.insertFleet(FleetID(0), null, CharacterID(0), null))
+  check(fleet.interpreter.queries.insertFleet(FleetID(0), null, CharacterID(0), null, None))
   check(fleet.interpreter.queries.myFleets(CharacterID(0)))
   check(fleet.interpreter.queries.myParticipations(CharacterID(0)))
 }
