@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/asvanberg/fap.svg?branch=master)](https://travis-ci.org/asvanberg/fap)
+
 # Fleet action participation
 
 A simple service used to track participation in fleets in EVE Online.
