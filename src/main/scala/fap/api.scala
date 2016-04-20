@@ -41,6 +41,8 @@ object api {
         respond(myFleets[Fap].map(Ok(_)))
       case GET -> Root / "participations" =>
         respond(myParticipations[Fap].map(Ok(_)))
+      case GET -> Root / "fleets" / "corporation" =>
+        respond(corporationFleets[Fap].map(Ok(_)))
       case request @ POST -> Root / "register" =>
         token => request.decode[FleetRegistration] {
           case FleetRegistration(name, FleetURI(fleetId)) =>

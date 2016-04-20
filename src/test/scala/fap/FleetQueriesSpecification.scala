@@ -2,7 +2,7 @@ package fap
 
 import doobie.contrib.specs2.analysisspec.AnalysisSpec
 import doobie.util.transactor.DriverManagerTransactor
-import fap.model.{CharacterID, FleetID}
+import fap.model.{CharacterID, CorporationID, FleetID}
 import org.flywaydb.core.Flyway
 import org.specs2.mutable.Specification
 
@@ -21,4 +21,5 @@ object FleetQueriesSpecification extends Specification with AnalysisSpec {
   check(fleet.interpreter.queries.insertFleet(FleetID(0), null, CharacterID(0), null, None))
   check(fleet.interpreter.queries.myFleets(CharacterID(0)))
   check(fleet.interpreter.queries.myParticipations(CharacterID(0)))
+  check(fleet.interpreter.queries.corporationFleets(CorporationID(0)))
 }

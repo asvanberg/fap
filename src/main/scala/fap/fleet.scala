@@ -15,6 +15,7 @@ object fleet {
   final case class MyFleets(characterID: CharacterID) extends FleetOp[List[Fleet]]
   final case class MyParticipations(characterID: CharacterID) extends FleetOp[List[Fleet]]
   final case class FleetMembers(fleetID: FleetID) extends FleetOp[List[FleetMember]]
+  final case class CorporationFleets(corporationID: CorporationID) extends FleetOp[List[Fleet]]
 
   class Fleets[F[_]](implicit I: Inject[FleetOp, F]) {
     private def lift[A](ga: FleetOp[A]) = Free.liftFC(I.inj(ga))
@@ -33,6 +34,9 @@ object fleet {
 
     def fleetMembers(fleet: FleetID): Free.FreeC[F, List[FleetMember]] =
       lift(FleetMembers(fleet))
+
+    def corporationFleets(corporationID: CorporationID): Free.FreeC[F, List[Fleet]] =
+      lift(CorporationFleets(corporationID))
   }
 
   object Fleets {
@@ -57,6 +61,9 @@ object fleet {
           .list
       case FleetMembers(fleetID) =>
         queries.fleetMembers(fleetID)
+          .list
+      case CorporationFleets(corporationID) =>
+        queries.corporationFleets(corporationID)
           .list
     }
 
@@ -101,6 +108,14 @@ object fleet {
           WHERE fleet_id = $fleetID
           """
           .query[FleetMember]
+
+      def corporationFleets(corporationID: CorporationID): Query0[Fleet] =
+        sql"""
+          SELECT id, name, commander, logged
+          FROM fleet
+          WHERE corporation_id = $corporationID
+          """
+          .query[Fleet]
     }
   }
 }

@@ -31,4 +31,7 @@ object hi {
 
   def currentCharacter[F[_]](implicit C: Crest[F]): Free.FreeC[F, Character] =
     C.selectedCharacter
+
+  def corporationFleets[F[_]](implicit C: Crest[F], F: Fleets[F]): Free.FreeC[F, List[Fleet]] =
+    currentCharacter map (_.corporation.id) >>= F.corporationFleets
 }
