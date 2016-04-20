@@ -10,6 +10,9 @@ import fap.model.{CorporationID, Fleet, FleetID, FleetMember}
 
 import scalaz.Free
 import scalaz.std.list._
+import scalaz.syntax.apply._
+import scalaz.syntax.equal._
+import scalaz.syntax.std.boolean._
 import scalaz.syntax.traverse._
 
 object hi {
@@ -34,4 +37,12 @@ object hi {
 
   def corporationFleets[F[_]](implicit C: Crest[F], F: Fleets[F]): Free.FreeC[F, List[Fleet]] =
     currentCharacter map (_.corporation.id) >>= F.corporationFleets
+
+  def members[F[_]](fleetID: FleetID)(implicit C: Crest[F], F: Fleets[F]): Free.FreeC[F, Option[List[FleetMember]]] =
+    (currentCharacter |@| F.getFleet(fleetID) |@| F.fleetMembers(fleetID))({
+      case (current, fleet, members) =>
+        val corpMember = fleet.flatMap(_.corporation).exists(_ === current.corporation.id)
+        val fleetMember = members.exists(_.characterID === current.id)
+        (corpMember || fleetMember).option(members)
+    })
 }

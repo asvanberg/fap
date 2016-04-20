@@ -16,6 +16,7 @@ object fleet {
   final case class MyParticipations(characterID: CharacterID) extends FleetOp[List[Fleet]]
   final case class FleetMembers(fleetID: FleetID) extends FleetOp[List[FleetMember]]
   final case class CorporationFleets(corporationID: CorporationID) extends FleetOp[List[Fleet]]
+  final case class GetFleet(fleetID: FleetID) extends FleetOp[Option[Fleet]]
 
   class Fleets[F[_]](implicit I: Inject[FleetOp, F]) {
     private def lift[A](ga: FleetOp[A]) = Free.liftFC(I.inj(ga))
@@ -37,6 +38,9 @@ object fleet {
 
     def corporationFleets(corporationID: CorporationID): Free.FreeC[F, List[Fleet]] =
       lift(CorporationFleets(corporationID))
+
+    def getFleet(fleetID: FleetID): Free.FreeC[F, Option[Fleet]] =
+      lift(GetFleet(fleetID))
   }
 
   object Fleets {
@@ -48,7 +52,7 @@ object fleet {
       case AddFleet(fleet, name, commander, logged, corporationID) =>
         queries.insertFleet(fleet, name, commander, logged, corporationID)
           .run
-          .as(Fleet(fleet, name, commander, logged))
+          .as(Fleet(fleet, name, commander, logged, corporationID))
       case AddFleetMember(fleet, member, solarSystem, ship) =>
         queries.insertMember(fleet, member, solarSystem, ship)
           .run
@@ -65,6 +69,9 @@ object fleet {
       case CorporationFleets(corporationID) =>
         queries.corporationFleets(corporationID)
           .list
+      case GetFleet(fleetID) =>
+        queries.fleetById(fleetID)
+          .option
     }
 
     object queries {
@@ -86,7 +93,7 @@ object fleet {
 
       def myFleets(characterID: CharacterID): Query0[Fleet] =
         sql"""
-          SELECT id, name, commander, logged
+          SELECT id, name, commander, logged, corporation_id
           FROM fleet
           WHERE commander = $characterID
           """
@@ -94,7 +101,7 @@ object fleet {
 
       def myParticipations(characterID: CharacterID): Query0[Fleet] =
         sql"""
-          SELECT fleet.id, name, commander, logged
+          SELECT fleet.id, name, commander, logged, corporation_id
           FROM member
             INNER JOIN fleet ON fleet.id = member.fleet_id
           WHERE member.id = $characterID
@@ -111,9 +118,17 @@ object fleet {
 
       def corporationFleets(corporationID: CorporationID): Query0[Fleet] =
         sql"""
-          SELECT id, name, commander, logged
+          SELECT id, name, commander, logged, corporation_id
           FROM fleet
           WHERE corporation_id = $corporationID
+          """
+          .query[Fleet]
+
+      def fleetById(fleetID: FleetID): Query0[Fleet] =
+        sql"""
+          SELECT id, name, commander, logged, corporation_id
+          FROM fleet
+          WHERE id = $fleetID
           """
           .query[Fleet]
     }

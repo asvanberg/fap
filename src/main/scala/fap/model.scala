@@ -5,25 +5,30 @@ import java.time.Instant
 import argonaut.CodecJson
 import argonaut.CodecJson._
 
+import scalaz.Equal
+import scalaz.std.anyVal.longInstance
+
 object model {
   final case class CharacterID(id: Long) extends AnyVal
 
   object CharacterID {
     implicit val jsonCodec: CodecJson[CharacterID] = CodecJson.derived[Long].xmap(CharacterID(_))(_.id)
+    implicit val corporationIDEqual: Equal[CharacterID] = Equal[Long].contramap(_.id)
   }
 
   final case class CorporationID(id: Long) extends AnyVal
   object CorporationID {
     implicit val jsonCodec: CodecJson[CorporationID] = CodecJson.derived[Long].xmap(CorporationID(_))(_.id)
+    implicit val corporationIDEqual: Equal[CorporationID] = Equal[Long].contramap(_.id)
   }
 
   type SolarSystem = String
 
   type Ship = String
 
-  final case class Fleet(fleetID: FleetID, name: String, commander: CharacterID, logged: Instant)
+  final case class Fleet(fleetID: FleetID, name: String, commander: CharacterID, logged: Instant, corporation: Option[CorporationID])
   object Fleet {
-    implicit val jsonCodec: CodecJson[Fleet] = casecodec4(Fleet.apply, Fleet.unapply)("fleetID", "name", "commander", "logged")
+    implicit val jsonCodec: CodecJson[Fleet] = casecodec5(Fleet.apply, Fleet.unapply)("fleetID", "name", "commander", "logged", "corporationID")
   }
 
   final case class FleetMember(fleetID: FleetID, characterID: CharacterID, solarSystem: SolarSystem, ship: Ship)

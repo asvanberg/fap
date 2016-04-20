@@ -39,6 +39,8 @@ object api {
     def service = authenticatedService {
       case GET -> Root / "fleets" =>
         respond(myFleets[Fap].map(Ok(_)))
+      case GET -> Root / "fleets" / LongVar(fleetID) / "members" =>
+        respond(members[Fap](FleetID(fleetID)).map(_.fold(Forbidden())(Ok(_))))
       case GET -> Root / "participations" =>
         respond(myParticipations[Fap].map(Ok(_)))
       case GET -> Root / "fleets" / "corporation" =>

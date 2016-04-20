@@ -22,4 +22,5 @@ object FleetQueriesSpecification extends Specification with AnalysisSpec {
   check(fleet.interpreter.queries.myFleets(CharacterID(0)))
   check(fleet.interpreter.queries.myParticipations(CharacterID(0)))
   check(fleet.interpreter.queries.corporationFleets(CorporationID(0)))
+  check(fleet.interpreter.queries.fleetById(FleetID(0)))
 }
