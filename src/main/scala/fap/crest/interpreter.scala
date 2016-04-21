@@ -30,10 +30,11 @@ object interpreter {
   private class HttpInterpreter(client: Client, server: Server) extends (CrestOp ~> Kleisli[CrestAPI, OAuth2BearerToken, ?]) {
     private def crestCall[A: EntityDecoder](f: Uri => Uri) =
       Kleisli.kleisli[CrestAPI, OAuth2BearerToken, A] { token =>
+        val comment = fap.BuildInfo.homepage.map(_.toString).map(AgentComment).toList
         val request = Request(
           headers = Headers(
             Authorization(token),
-            `User-Agent`(AgentProduct(fap.BuildInfo.name, Some(fap.BuildInfo.version)), fap.BuildInfo.homepage.map(url => AgentComment(url.toString)).toSeq)
+            `User-Agent`(AgentProduct(fap.BuildInfo.name, Some(fap.BuildInfo.version)), comment)
           ),
           uri = f(server.root) / "" // Ensure trailing slash
         )
