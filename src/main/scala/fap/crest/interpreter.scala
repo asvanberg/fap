@@ -7,7 +7,7 @@ import org.http4s._
 import org.http4s.argonaut.jsonOf
 import org.http4s.client.Client
 import org.http4s.dsl._
-import org.http4s.headers.Authorization
+import org.http4s.headers.{AgentComment, AgentProduct, Authorization, `User-Agent`}
 
 import scala.Function.const
 import scalaz._
@@ -31,7 +31,10 @@ object interpreter {
     private def crestCall[A: EntityDecoder](f: Uri => Uri) =
       Kleisli.kleisli[CrestAPI, OAuth2BearerToken, A] { token =>
         val request = Request(
-          headers = Headers(Authorization(token)),
+          headers = Headers(
+            Authorization(token),
+            `User-Agent`(AgentProduct(fap.BuildInfo.name, Some(fap.BuildInfo.version)), fap.BuildInfo.homepage.map(url => AgentComment(url.toString)).toSeq)
+          ),
           uri = f(server.root) / "" // Ensure trailing slash
         )
         CrestResponseT(client.fetch(request) {

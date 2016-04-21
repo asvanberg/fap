@@ -6,7 +6,14 @@ scalaVersion := "2.11.8"
 
 resolvers += Resolver.sonatypeRepo("releases")
 
+homepage := Some(url("https://github.com/asvanberg/fap"))
+
 addCompilerPlugin("org.spire-math" %% "kind-projector" % "0.7.1")
+
+lazy val fap = project.in(file(".")).enablePlugins(BuildInfoPlugin)
+
+buildInfoKeys := Seq[BuildInfoKey](name, version, homepage)
+buildInfoPackage := "fap"
 
 val http4sVersion = "0.13.2"
 val scalazVersion = "7.1.7"
