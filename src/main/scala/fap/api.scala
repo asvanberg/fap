@@ -41,11 +41,11 @@ object api {
         respond(myFleets[Fap].map(Ok(_)))
       case GET -> Root / "fleets" / LongVar(fleetID) / "members" =>
         respond(members[Fap](FleetID(fleetID)).map(_.fold(Forbidden())(Ok(_))))
-      case GET -> Root / "participations" =>
+      case GET -> Root / "fleets" / "participation" =>
         respond(myParticipations[Fap].map(Ok(_)))
       case GET -> Root / "fleets" / "corporation" =>
         respond(corporationFleets[Fap].map(Ok(_)))
-      case request @ POST -> Root / "register" =>
+      case request @ POST -> Root / "fleets" =>
         token => request.decode[FleetRegistration] {
           case FleetRegistration(name, FleetURI(fleetId)) =>
             val response = registerFleet[Fap](FleetID(fleetId.toLong), name, Instant.now(), None).map {
@@ -55,7 +55,7 @@ object api {
             respond(response)(token)
           case _ => BadRequest()
         }
-      case request @ POST -> Root / "register" / "corporation" =>
+      case request @ POST -> Root / "fleets" / "corporation" =>
         token => request.decode[FleetRegistration] {
           case FleetRegistration(name, FleetURI(fleetId)) =>
             val response = for {
