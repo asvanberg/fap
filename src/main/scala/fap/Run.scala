@@ -87,9 +87,11 @@ object Run extends App {
   }
 
   def createServer(configuration: Configuration, interpreter: Fap ~> FapTask) = {
+    val backend = new Backend(interpreter)
     BlazeBuilder
       .bindLocal(configuration.port)
-      .mountService(new Backend(interpreter).service)
+      .mountService(backend.statisticsService, "/statistics")
+      .mountService(backend.service)
       .start
   }
 

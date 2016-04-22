@@ -6,11 +6,12 @@ import doobie.imports.{freeMonadC, unapplyMMFA}
 import fap.crest.Crest
 import fap.crest.model.Character
 import fap.fleet.Fleets
-import fap.model.{CorporationID, Fleet, FleetID, FleetMember}
+import fap.model._
 
 import scalaz.Free
 import scalaz.std.list._
-import scalaz.syntax.apply._
+import scalaz.std.map._
+import scalaz.syntax.apply.{ToFunctorOps => _, _}
 import scalaz.syntax.equal._
 import scalaz.syntax.std.boolean._
 import scalaz.syntax.traverse._
@@ -45,4 +46,26 @@ object hi {
         val fleetMember = members.exists(_.characterID === current.id)
         (corpMember || fleetMember).option(members)
     })
+
+  object statistics {
+    final case class FleetParticipation(fleet: Fleet, ship: Ship, solarSystem: SolarSystem)
+    final case class FleetParticipations(characterID: CharacterID, participation: List[FleetParticipation])
+
+    def participations[F[_]: Crest : Fleets](since: Option[Instant]): Free.FreeC[F, List[FleetParticipations]] =
+      participations0(myFleets, since)
+
+    def corporationParticipations[F[_]: Crest : Fleets](since: Option[Instant]): Free.FreeC[F, List[FleetParticipations]] =
+      participations0(corporationFleets, since)
+
+    private def participations0[F[_]](fleetsF: Free.FreeC[F, List[Fleet]], since: Option[Instant])(implicit F: Fleets[F]) =
+      for {
+        fleets <- fleetsF map { _.filter(fleet => since.forall(fleet.logged.isAfter)) }
+        participations <- fleets traverseU { fleet =>
+          F.fleetMembers(fleet.fleetID).map(_.strengthL(fleet))
+        }
+      } yield participations.flatten.foldMap {
+        case (fleet, FleetMember(_, character, solarSystem, ship)) =>
+          Map(character -> List(FleetParticipation(fleet, ship, solarSystem)))
+      }.toList.map((FleetParticipations.apply _).tupled)
+  }
 }

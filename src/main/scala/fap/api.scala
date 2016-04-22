@@ -6,6 +6,7 @@ import _root_.argonaut._
 import argonaut.Argonaut._
 import fap.crest.interpreter.CrestResponse
 import fap.hi._
+import fap.hi.statistics.{FleetParticipation, FleetParticipations}
 import fap.model.FleetID
 import org.http4s._
 import org.http4s.argonaut._
@@ -23,7 +24,16 @@ object api {
 
   implicit val fleetRegistrationJson: CodecJson[FleetRegistration] = casecodec2(FleetRegistration.apply, FleetRegistration.unapply)("name", "href")
   implicit val fleetRegistrationDecoder: EntityDecoder[FleetRegistration] = jsonOf
+  implicit val fleetParticipationCodecJson: CodecJson[FleetParticipation] =
+    casecodec3(FleetParticipation.apply, FleetParticipation.unapply)("fleet", "ship", "solarSystem")
+  implicit val fleetParticipations: CodecJson[FleetParticipations] =
+    casecodec2(FleetParticipations.apply, FleetParticipations.unapply)("characterID", "participations")
   implicit def jsonEncoderOf[A: EncodeJson]: EntityEncoder[A] = org.http4s.argonaut.jsonEncoderOf[A]
+
+  implicit val instantQueryParamDecoder: QueryParamDecoder[Instant] =
+    QueryParamDecoder.decodeBy(Instant.ofEpochMilli)
+  implicit val instantQueryParam: QueryParam[Instant] = QueryParam.fromKey("since")
+  object Since extends OptionalQueryParamMatcher[Instant]
 
   class Backend(interpreter: Fap ~> FapTask) {
 
@@ -65,6 +75,13 @@ object api {
             } yield Ok(("fleet", fleet.asJson) ->: ("members", members.asJson) ->: jEmptyObject)
             respond(response)(token)
         }
+    }
+
+    def statisticsService = authenticatedService {
+      case GET -> Root / "participation" :? Since(since) =>
+        respond(statistics.participations[Fap](since).map(Ok(_)))
+      case GET -> Root / "participation" / "corporation" :? Since(since) =>
+        respond(statistics.corporationParticipations[Fap](since).map(Ok(_)))
     }
 
     private def authenticatedService(run: PartialFunction[Request, OAuth2BearerToken => Task[Response]]): HttpService =
